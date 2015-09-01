@@ -1,6 +1,6 @@
 {
     "name": "kanazaca/easypay",
-    "description": "API for easypay.pt",
+    "description": "Laravel package for easypay.pt",
     "license": "MIT",
     "authors": [
         {
