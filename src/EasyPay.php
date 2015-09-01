@@ -81,21 +81,21 @@ class EasyPay {
     | Process payment info (store ep_doc in database and return info from easypay)
     |--------------------------------------------------------------------------
     */
-    public function processPaymentInfo($data)
+    public function processPaymentInfo()
     {
         //Insert notification into database
         DB::table('easypay_notifications')->insert([
-            'ep_cin' => $data['ep_cin'],
-            'ep_user' => $data['ep_user'],
-            'ep_doc' => $data['ep_doc']
+            'ep_cin' => $_GET['ep_cin'],
+            'ep_user' => $_GET['ep_user'],
+            'ep_doc' => $_GET['ep_doc']
         ]);
 
-        if(!$data['ep_doc'])
+        if(!$_GET['ep_doc'])
             throw new Exception("ep_doc is required for the communication");
 
         $this->_add_uri_param('ep_user', config('easypay.user'));
         $this->_add_uri_param('ep_cin', config('easypay.cin'));
-        $this->_add_uri_param('ep_doc', $data['ep_doc']);
+        $this->_add_uri_param('ep_doc', $_GET['ep_doc']);
 
         $info = $this->_clearArray($this->_xmlToArray( $this->_get_contents( $this->_get_uri( config('easypay.request_payment_data')) )));
 

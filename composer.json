@@ -9,5 +9,10 @@
         }
     ],
     "minimum-stability": "stable",
+    "autoload": {
+        "psr-4": {
+            "kanazaca\\easypay\\": "src/"
+        }
+    },
     "require": {}
 }
