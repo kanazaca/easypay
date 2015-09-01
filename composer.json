@@ -8,6 +8,6 @@
             "email": "hugo.neto@grandesplanos.com"
         }
     ],
-    "minimum-stability": "dev",
+    "minimum-stability": "stable",
     "require": {}
 }
