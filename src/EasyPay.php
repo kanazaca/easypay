@@ -26,6 +26,9 @@ class EasyPay {
     //Code for API validation
     public $code;
 
+    // ID from orders table
+    public $t_key;
+
     // LInk to easypay redirect
     public $return_url;
 
@@ -41,15 +44,12 @@ class EasyPay {
     // Message of response
     public $message;
 
-    public function __construct($o_name, $o_email, $t_value, $o_description = null, $o_obs = null, $o_mobile = null)
+    public function __construct($payment_info = [])
     {
-        $this->o_name = $o_name;
-        $this->o_email = $o_email;
-        $this->t_value = $t_value;
-        $this->o_description = $o_description;
-        $this->o_obs = $o_obs;
-        $this->o_mobile = $o_mobile;
-        $this->code = config('easypay.code') ? config('easypay.code') : false;
+        foreach($payment_info as $key => $info)
+        {
+            $this->$key = $info;
+        }
     }
 
     /*
@@ -63,7 +63,7 @@ class EasyPay {
         $this->_add_uri_param('ep_entity', config('easypay.entity'));
         $this->_add_uri_param('ep_cin', config('easypay.cin'));
         $this->_add_uri_param('t_value', $this->t_value);
-        //$this->_add_uri_param('t_key', $this->key);
+        $this->_add_uri_param('t_key', $this->t_key);
         $this->_add_uri_param('ep_language', config('easypay.language'));
         $this->_add_uri_param('ep_country', config('easypay.country'));
         $this->_add_uri_param('ep_ref_type', config('easypay.ref_type'));
@@ -72,11 +72,6 @@ class EasyPay {
         $this->_add_uri_param('o_obs', $this->o_obs);
         $this->_add_uri_param('o_mobile', $this->o_mobile);
         $this->_add_uri_param('o_email', $this->o_email);
-
-        if( isset( $this -> code ) && $this -> code )
-        {
-            $this->_add_uri_param('s_code',  $this->code);
-        }
 
         return $this->_xmlToArray( $this->_get_contents( $this->_get_uri( config('easypay.request_reference') ) ) );
     }
@@ -102,16 +97,67 @@ class EasyPay {
         $this->_add_uri_param('ep_cin', config('easypay.cin'));
         $this->_add_uri_param('ep_doc', $data['ep_doc']);
 
-        if( isset( $this -> code ) && $this -> code )
-        {
-            $this->_add_uri_param('s_code',  $this->code);
-        }
-
-        $info = $this->clearArray($this->_xmlToArray( $this->_get_contents( $this->_get_uri( config('easypay.request_payment_data')) )));
+        $info = $this->_clearArray($this->_xmlToArray( $this->_get_contents( $this->_get_uri( config('easypay.request_payment_data')) )));
 
         $this->updatePaymentInfo($info);
 
         $this->renderXML($info);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Save creditcard authorization key if it is OK
+    |--------------------------------------------------------------------------
+    */
+    public static function saveAuthorizationKey()
+    {
+        if($_GET['s'] == 'ok')
+        {
+            $authorization_key = DB::table(config('easypay.order_table_name'))
+            ->where(config('easypay.order_table_id'), '=', $_GET['t_key'])
+            ->update([config('easypay.order_table_key_field') => $_GET['k']]);
+
+            return [
+                'entity' => $_GET['e'],
+                'reference' => $_GET['r'],
+                'value' => $_GET['v'],
+                'key' => $_GET['k'],
+                't_key' => $_GET['t_key']
+            ];
+        }
+
+        return false;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Trigger credit-card payment in easypay
+    |--------------------------------------------------------------------------
+    */
+    public function requestPayment( $reference, $key, $value)
+    {
+        $this->_add_uri_param('u', config('easypay.user'));
+        $this->_add_uri_param('e', config('easypay.entity'));
+        $this->_add_uri_param('r', $reference);
+        $this->_add_uri_param('l', config('easypay.language'));
+        $this->_add_uri_param('k', $key);
+        $this->_add_uri_param('v', $value);
+
+        return $this->_xmlToArray( $this->_get_contents( $this->_get_uri( config('easypay.request_payment') )));
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Fetch all payments
+    |--------------------------------------------------------------------------
+    */
+    public function fetchAllPayments()
+    {
+        $this->_add_uri_param('ep_cin', config('easypay.cin'));
+        $this->_add_uri_param('ep_user', config('easypay.user'));
+        $this->_add_uri_param('ep_entity', config('easypay.entity'));
+
+        return $this->_xmlToArray( $this->_get_contents( $this->_get_uri( config('easypay.request_payment_list') )));
     }
 
     /*
@@ -242,6 +288,8 @@ class EasyPay {
     {
         $str = $this->getServerLink();
 
+        $this->_add_code_to_uri(); // adds s_code to all requests
+
         $str .= $url;
 
         $tmp = str_replace(' ', '+', http_build_query( $this -> uri ) );
@@ -290,10 +338,22 @@ class EasyPay {
 
     /*
     |--------------------------------------------------------------------------
+    | Add s_code to URI
+    |--------------------------------------------------------------------------
+    */ 
+    private function _add_code_to_uri()
+    {
+        $this->code = config('easypay.code') ? config('easypay.code') : false;
+
+        $this->_add_uri_param('s_code',  $this->code);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
     | Clear data array
     |--------------------------------------------------------------------------
     */
-    public function clearArray($array)
+    public function _clearArray($array)
     {
         foreach($array as $key => $arr)
         {

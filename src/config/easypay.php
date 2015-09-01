@@ -14,16 +14,10 @@ return [
     'request_payment_list'  				=> 'api_easypay_040BG1.php',
 
     // Define the Request Recurring Payment
-    'request_payment_list'  				=> 'api_easypay_07BG.php',
+    //'request_payment_list'  				=> 'api_easypay_07BG.php',
 
     // Define the Request a Verification of a Transaction Key
     'request_transaction_key_verification' 	=> 'api_easypay_23AG.php',
-
-    // Define the Payment Modifier API
-    'modify_payment' 						=> 'api_easypay_00BG.php',
-
-    // Define the Payment Modifier API
-    'modify_payment' 						=> 'api_easypay_00BG.php',
 
     // Define the Payment Modifier API
     'modify_payment' 						=> 'api_easypay_00BG.php',
@@ -59,6 +53,15 @@ return [
     'live_mode'								=> false,
 
     // Default URL for easypay redirect to
-    'ep_rec_url'                            => 'http://yoursite.com/easypay/direct_debit_return.php'
+    'ep_rec_url'                            => 'http://yoursite.com/easypay/direct_debit_return.php',
+
+    // Database table name which contains the orders/subscriptions to save de authorization key from credit card
+    'order_table_name'                      => 'subscriptions',
+
+    // Order identifier
+    'order_table_id'                        => 'id',
+
+    // Order authorization key
+    'order_table_key_field'                 => 'key'
 
 ];
