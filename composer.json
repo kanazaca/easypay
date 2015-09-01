@@ -1,0 +1,13 @@
+{
+    "name": "kanazaca/easypay",
+    "description": "API for easypay.pt",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Hugo Neto",
+            "email": "hugo.neto@grandesplanos.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {}
+}
