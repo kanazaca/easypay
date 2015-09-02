@@ -89,3 +89,6 @@ $all_payments = $easypay->fetchAllPayments();
 ```
 
 and thats it ....
+
+### Credits
+Hugo Neto
