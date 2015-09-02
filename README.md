@@ -74,7 +74,7 @@ Now you can do what you want with this information, maybe you might want save to
 ### Method to receive notifications in real time
 When easypay get his payment they will call the URL that you provided to them which will execute a similiar method like below, for more details see (https://docs.easypay.pt/workflow/payment-notification)
 ```php
-$easypay = new easypay\EasyPay($payment_info);
+$easypay = new EasyPay($payment_info);
 
 $notification = $easypay->processPaymentInfo();
 ```
@@ -83,7 +83,7 @@ This block of code will store into database the document number of the payment r
 ### Get all payments
 This will return an array with all of your payments from easypay
 ```php
-$easypay = new easypay\EasyPay();
+$easypay = new EasyPay();
 
 $all_payments = $easypay->fetchAllPayments();
 ```
