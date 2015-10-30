@@ -1,49 +1,49 @@
 <?php namespace kanazaca\easypay;
-
+ 
 use DB;
-
-
+ 
+ 
 class EasyPay {
-
+ 
     // optional for multibanco, required for boleto, credit card and direct debit
     public $o_name;
-
+ 
     // optional for multibanco, required for boleto, credit card and direct debit
     public $o_email;
-
+ 
     // The value the client have to pay.
     public $t_value;
-
+ 
     // You can use this to store whatever you want..
     public $o_description;
-
+ 
     // You can use this to store whatever you want..
     public $_obs;
-
+ 
     // Your client mobile or phone number. It will be automatically filled on Credit Card gateway.
     public $o_mobile;
-
+ 
     //Code for API validation
     public $code;
-
+ 
     // ID from orders table
     public $t_key;
-
+ 
     // LInk to easypay redirect
     public $return_url;
-
+ 
     // Uri holder
     private $uri = [];
-
+ 
     // Sandbox true or false
     public $live_mode;
-
+ 
     // Status of response
     public $status;
-
+ 
     // Message of response
     public $message;
-
+ 
     public function __construct($payment_info = [])
     {
         foreach($payment_info as $key => $info)
@@ -51,7 +51,7 @@ class EasyPay {
             $this->$key = $info;
         }
     }
-
+ 
     /*
     |--------------------------------------------------------------------------
     | Creates a New Reference
@@ -72,10 +72,10 @@ class EasyPay {
         $this->_add_uri_param('o_obs', $this->o_obs);
         $this->_add_uri_param('o_mobile', $this->o_mobile);
         $this->_add_uri_param('o_email', $this->o_email);
-
+ 
         return $this->_xmlToArray( $this->_get_contents( $this->_get_uri( config('easypay.request_reference') ) ) );
     }
-
+ 
     /*
     |--------------------------------------------------------------------------
     | Process payment info (store ep_doc in database and return info from easypay)
@@ -89,21 +89,21 @@ class EasyPay {
             'ep_user' => $_GET['ep_user'],
             'ep_doc' => $_GET['ep_doc']
         ]);
-
+ 
         if(!$_GET['ep_doc'])
             throw new Exception("ep_doc is required for the communication");
-
+ 
         $this->_add_uri_param('ep_user', config('easypay.user'));
         $this->_add_uri_param('ep_cin', config('easypay.cin'));
         $this->_add_uri_param('ep_doc', $_GET['ep_doc']);
-
+ 
         $info = $this->_clearArray($this->_xmlToArray( $this->_get_contents( $this->_get_uri( config('easypay.request_payment_data')) )));
-
+ 
         $this->updatePaymentInfo($info);
-
-        $this->renderXML($info);
+ 
+        return $this->renderXML($info);
     }
-
+ 
     /*
     |--------------------------------------------------------------------------
     | Save creditcard authorization key if it is OK
@@ -116,7 +116,7 @@ class EasyPay {
             $authorization_key = DB::table(config('easypay.order_table_name'))
             ->where(config('easypay.order_table_id'), '=', $_GET['t_key'])
             ->update([config('easypay.order_table_key_field') => $_GET['k']]);
-
+ 
             return [
                 'entity' => $_GET['e'],
                 'reference' => $_GET['r'],
@@ -125,10 +125,10 @@ class EasyPay {
                 't_key' => $_GET['t_key']
             ];
         }
-
+ 
         return false;
     }
-
+ 
     /*
     |--------------------------------------------------------------------------
     | Trigger credit-card payment in easypay
@@ -142,10 +142,10 @@ class EasyPay {
         $this->_add_uri_param('l', config('easypay.language'));
         $this->_add_uri_param('k', $key);
         $this->_add_uri_param('v', $value);
-
+ 
         return $this->_xmlToArray( $this->_get_contents( $this->_get_uri( config('easypay.request_payment') )));
     }
-
+ 
     /*
     |--------------------------------------------------------------------------
     | Fetch all payments
@@ -156,10 +156,10 @@ class EasyPay {
         $this->_add_uri_param('ep_cin', config('easypay.cin'));
         $this->_add_uri_param('ep_user', config('easypay.user'));
         $this->_add_uri_param('ep_entity', config('easypay.entity'));
-
+ 
         return $this->_xmlToArray( $this->_get_contents( $this->_get_uri( config('easypay.request_payment_list') )));
     }
-
+ 
     /*
     |--------------------------------------------------------------------------
     | Update payment info
@@ -171,7 +171,7 @@ class EasyPay {
         {
             throw new Exception("Payment info fetch failed !");
         }
-
+ 
         DB::table('easypay_notifications')->where('ep_doc', '=', $data['ep_doc'])->update([
             'ep_status' => $data['ep_status'],
             'ep_entity' => $data['ep_entity'],
@@ -187,7 +187,7 @@ class EasyPay {
             't_key' => $data['t_key']
         ]);
     }
-
+ 
     /*
     |--------------------------------------------------------------------------
     | Render XML
@@ -195,18 +195,18 @@ class EasyPay {
     */
     public function renderXML($data)
     {
-        header( 'Content-type: text/xml' );
-
-        echo '<?xml version="1.0" encoding="ISO-8859-1" ?>
-                <getautoMB_key>
-                  <ep_status>'.$data['ep_status'].'</ep_status>
-                  <ep_message>'.$data['ep_message'].'</ep_message>
-                  <ep_cin>'.$data['ep_cin'].'</ep_cin>
-                  <ep_user>'.$data['ep_user'].'</ep_user>
-                  <ep_doc>'.$data['ep_doc'].'</ep_doc>
-                </getautoMB_key>';
+        $content = '<?xml version="1.0" encoding="ISO-8859-1" ?>
+               <getautomb_key>
+                 <ep_status>'.$data['ep_status'].'</ep_status>
+                 <ep_message>'.$data['ep_message'].'</ep_message>
+                 <ep_cin>'.$data['ep_cin'].'</ep_cin>
+                 <ep_user>'.$data['ep_user'].'</ep_user>
+                 <ep_doc>'.$data['ep_doc'].'</ep_doc>
+               </getautomb_key>';
+ 
+        return $content;
     }
-
+ 
     /*
     |--------------------------------------------------------------------------
     | Sets live mode
@@ -216,7 +216,7 @@ class EasyPay {
     {
         $this->live_mode = $live_mode;
     }
-
+ 
     /*
     |--------------------------------------------------------------------------
     | Set ep_rec_url - call if want a return url different for this request
@@ -226,7 +226,7 @@ class EasyPay {
     {
         $this->return_url = $return_url ? $return_url : config('easypay.ep_rec_url');
     }
-
+ 
     /*
     |--------------------------------------------------------------------------
     | Convert XML to Array
@@ -235,15 +235,15 @@ class EasyPay {
     private function _xmlToArray( $string )
     {
         try {
-            $obj 	= simplexml_load_string( $string );
-            $data 	= json_decode( json_encode( $obj ), true );
+            $obj        = simplexml_load_string( $string );
+            $data       = json_decode( json_encode( $obj ), true );
         } catch( Exception $e ) {
             $data = false;
         }
-
+ 
         return $data;
     }
-
+ 
     /*
     |--------------------------------------------------------------------------
     | Get request reference link
@@ -253,7 +253,7 @@ class EasyPay {
     {
         return config('easypay.request_reference');
     }
-
+ 
     /*
     |--------------------------------------------------------------------------
     | Get request payment link
@@ -263,7 +263,7 @@ class EasyPay {
     {
         return $this->is_live() ? config('easypay.production_server') : config('easypay.test_server');
     }
-
+ 
     /*
     |--------------------------------------------------------------------------
     | Get production or sanbox mode
@@ -275,10 +275,10 @@ class EasyPay {
         {
             return $this->live_mode;
         }
-
+ 
         return config('easypay.live_mode');
     }
-
+ 
     /*
     |--------------------------------------------------------------------------
     | Return and clear URI
@@ -287,17 +287,17 @@ class EasyPay {
     public function _get_uri($url)
     {
         $str = $this->getServerLink();
-
+ 
         $this->_add_code_to_uri(); // adds s_code to all requests
-
+ 
         $str .= $url;
-
+ 
         $tmp = str_replace(' ', '+', http_build_query( $this -> uri ) );
         $this -> uri = array();
-
+ 
         return $str . '?' . $tmp;
     }
-
+ 
     /*
     |--------------------------------------------------------------------------
     | Returns a string from a link via cUrl
@@ -308,24 +308,24 @@ class EasyPay {
         try {
             $curl = curl_init();
             curl_setopt( $curl, CURLOPT_URL, $url );
-            curl_setopt( $curl, CURLOPT_CONNECTTIMEOUT, 5 );
+            curl_setopt( $curl, CURLOPT_CONNECTTIMEOUT, 20 );
             if ( strtoupper( $type ) == 'GET' ) {
             } elseif ( strtoupper( $type ) == 'POST' ) {
                 curl_setopt( $curl, CURLOPT_POST, TRUE );
             } else {
                 throw new Exception('Communication Error, standart communication not selected, POST or GET required');
             }
-
+ 
             curl_setopt( $curl, CURLOPT_RETURNTRANSFER, TRUE );
             $result = curl_exec( $curl );
             curl_close($curl);
         } catch( Exception $e ) {
             $result = false;
         }
-
+ 
         return $result;
     }
-
+ 
     /*
     |--------------------------------------------------------------------------
     | Adds a parameter to our URI
@@ -335,19 +335,19 @@ class EasyPay {
     {
         $this->uri[ $key ] = $value;
     }
-
+ 
     /*
     |--------------------------------------------------------------------------
     | Add s_code to URI
     |--------------------------------------------------------------------------
-    */ 
+    */
     private function _add_code_to_uri()
     {
         $this->code = config('easypay.code') ? config('easypay.code') : false;
-
+ 
         $this->_add_uri_param('s_code',  $this->code);
     }
-
+ 
     /*
     |--------------------------------------------------------------------------
     | Clear data array
@@ -362,7 +362,7 @@ class EasyPay {
                 $array[$key] = '';
             }
         }
-
+ 
         return $array;
     }
 }
