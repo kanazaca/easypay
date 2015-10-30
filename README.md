@@ -76,9 +76,13 @@ When easypay get his payment they will call the URL that you provided to them wh
 ```php
 $easypay = new EasyPay($payment_info);
 
-$notification = $easypay->processPaymentInfo();
+$xml = $easypay->processPaymentInfo();
+
+//do your code here if needed
+
+return \Response::make($xml, '200')->header('Content-Type', 'text/xml'); //must return in text/xml for easypay
 ```
-This block of code will store into database the document number of the payment received from easypay and update with more info sent from them.
+This block of code will store into database the document number of the payment received from easypay, update with more info sent from them and return xml to easypay. (Step 4 : https://docs.easypay.pt/workflow/payment-notification)
 
 ### Get all payments
 This will return an array with all of your payments from easypay
