@@ -4,46 +4,73 @@ use DB;
  
  
 class EasyPay {
- 
-    // optional for multibanco, required for boleto, credit card and direct debit
+
+    /**
+     * @var string
+     */
     public $o_name;
- 
-    // optional for multibanco, required for boleto, credit card and direct debit
+
+    /**
+     * @var string
+     */
     public $o_email;
- 
-    // The value the client have to pay.
+
+    /**
+     * @var string
+     */
     public $t_value;
- 
-    // You can use this to store whatever you want..
+
+    /**
+     * @var string
+     */
     public $o_description;
- 
-    // You can use this to store whatever you want..
+
+    /**
+     * @var string
+     */
     public $_obs;
- 
-    // Your client mobile or phone number. It will be automatically filled on Credit Card gateway.
+
+    /**
+     * @var string
+     */
     public $o_mobile;
- 
-    //Code for API validation
+
+    /**
+     * @var string
+     */
     public $code;
- 
-    // ID from orders table
+
+    /**
+     * @var string
+     */
     public $t_key;
- 
-    // LInk to easypay redirect
+
+    /**
+     * @var string
+     */
     public $return_url;
- 
-    // Uri holder
+
+    /**
+     * @var array
+     */
     private $uri = [];
- 
-    // Sandbox true or false
+
+    /**
+     * @var boolean
+     */
     public $live_mode;
- 
-    // Status of response
+
+    /**
+     * @var string
+     */
     public $status;
- 
-    // Message of response
+
+    /**
+     * @var string
+     */
     public $message;
- 
+
+
     public function __construct($payment_info = [])
     {
         foreach($payment_info as $key => $info)
@@ -51,12 +78,13 @@ class EasyPay {
             $this->$key = $info;
         }
     }
- 
-    /*
-    |--------------------------------------------------------------------------
-    | Creates a New Reference
-    |--------------------------------------------------------------------------
-    */
+
+
+    /**
+     * Creates a reference to pay with credit card or MB
+     *
+     * @return array
+     */
     public function createReference()
     {
         $this->_add_uri_param('ep_user', config('easypay.user'));
@@ -75,12 +103,13 @@ class EasyPay {
  
         return $this->_xmlToArray( $this->_get_contents( $this->_get_uri( config('easypay.request_reference') ) ) );
     }
- 
-    /*
-    |--------------------------------------------------------------------------
-    | Process payment info (store ep_doc in database and return info from easypay)
-    |--------------------------------------------------------------------------
-    */
+
+    /**
+     * Process payment info sent from easypay
+     *
+     * @return string
+     * @throws Exception
+     */
     public function processPaymentInfo()
     {
         //Insert notification into database
@@ -103,12 +132,12 @@ class EasyPay {
  
         return $this->renderXML($info);
     }
- 
-    /*
-    |--------------------------------------------------------------------------
-    | Save creditcard authorization key if it is OK
-    |--------------------------------------------------------------------------
-    */
+
+    /**
+     * Save to database the key sent from easypay
+     *
+     * @return array|bool
+     */
     public static function saveAuthorizationKey()
     {
         if($_GET['s'] == 'ok')
@@ -128,13 +157,14 @@ class EasyPay {
  
         return false;
     }
- 
-    /*
-    |--------------------------------------------------------------------------
-    | Trigger credit-card payment in easypay
-    |--------------------------------------------------------------------------
-    */
-    public function requestPayment( $reference, $key, $value)
+
+    /**
+     * @param $reference
+     * @param $key
+     * @param $value
+     * @return array
+     */
+    public function requestPayment($reference, $key, $value)
     {
         $this->_add_uri_param('u', config('easypay.user'));
         $this->_add_uri_param('e', config('easypay.entity'));
@@ -145,12 +175,12 @@ class EasyPay {
  
         return $this->_xmlToArray( $this->_get_contents( $this->_get_uri( config('easypay.request_payment') )));
     }
- 
-    /*
-    |--------------------------------------------------------------------------
-    | Fetch all payments
-    |--------------------------------------------------------------------------
-    */
+
+    /**
+     * Return all payments
+     *
+     * @return array
+     */
     public function fetchAllPayments()
     {
         $this->_add_uri_param('ep_cin', config('easypay.cin'));
@@ -159,12 +189,13 @@ class EasyPay {
  
         return $this->_xmlToArray( $this->_get_contents( $this->_get_uri( config('easypay.request_payment_list') )));
     }
- 
-    /*
-    |--------------------------------------------------------------------------
-    | Update payment info
-    |--------------------------------------------------------------------------
-    */
+
+    /**
+     * Update information sent from easypay in database
+     *
+     * @param $data
+     * @throws Exception
+     */
     private function updatePaymentInfo($data)
     {
         if(!$data)
@@ -187,12 +218,13 @@ class EasyPay {
             't_key' => $data['t_key']
         ]);
     }
- 
-    /*
-    |--------------------------------------------------------------------------
-    | Render XML
-    |--------------------------------------------------------------------------
-    */
+
+    /**
+     * Build XML to easypay read
+     *
+     * @param $data
+     * @return string
+     */
     public function renderXML($data)
     {
         $content = '<?xml version="1.0" encoding="ISO-8859-1" ?>
@@ -206,33 +238,14 @@ class EasyPay {
  
         return $content;
     }
- 
-    /*
-    |--------------------------------------------------------------------------
-    | Sets live mode
-    |--------------------------------------------------------------------------
-    */
-    public function setLiveMode($live_mode = false)
-    {
-        $this->live_mode = $live_mode;
-    }
- 
-    /*
-    |--------------------------------------------------------------------------
-    | Set ep_rec_url - call if want a return url different for this request
-    |--------------------------------------------------------------------------
-    */
-    public function seReturnUrl($return_url = null)
-    {
-        $this->return_url = $return_url ? $return_url : config('easypay.ep_rec_url');
-    }
- 
-    /*
-    |--------------------------------------------------------------------------
-    | Convert XML to Array
-    |--------------------------------------------------------------------------
-    */
-    private function _xmlToArray( $string )
+
+    /**
+     * Read and convert XML to Array
+     *
+     * @param $string
+     * @return bool|mixed
+     */
+    private function _xmlToArray($string )
     {
         try {
             $obj        = simplexml_load_string( $string );
@@ -243,67 +256,89 @@ class EasyPay {
  
         return $data;
     }
- 
-    /*
-    |--------------------------------------------------------------------------
-    | Get request reference link
-    |--------------------------------------------------------------------------
-    */
-    public function getRequestReferenceLink()
-    {
-        return config('easypay.request_reference');
-    }
- 
-    /*
-    |--------------------------------------------------------------------------
-    | Get request payment link
-    |--------------------------------------------------------------------------
-    */
-    public function getServerLink()
-    {
-        return $this->is_live() ? config('easypay.production_server') : config('easypay.test_server');
-    }
- 
-    /*
-    |--------------------------------------------------------------------------
-    | Get production or sanbox mode
-    |--------------------------------------------------------------------------
-    */
+
+    /**
+     * Check if is production or live mode
+     *
+     * @return mixed
+     */
     private function is_live()
     {
         if( $this->live_mode != null )
         {
             return $this->live_mode;
         }
- 
+
         return config('easypay.live_mode');
     }
- 
-    /*
-    |--------------------------------------------------------------------------
-    | Return and clear URI
-    |--------------------------------------------------------------------------
-    */
+
+    /**
+     * Add param to URI that will be sent to easypay API
+     * @param $key
+     * @param $value
+     */
+    private function _add_uri_param($key, $value )
+    {
+        $this->uri[ $key ] = $value;
+    }
+
+    /**
+     * SECURITY : If any code is defined in config this will attach it to every request
+     */
+    private function _add_code_to_uri()
+    {
+        $this->code = config('easypay.code') ? config('easypay.code') : false;
+
+        $this->_add_uri_param('s_code',  $this->code);
+    }
+
+    /**
+     * Helper to clear array generated by xml to array converter
+     *
+     * @param $array
+     * @return mixed
+     */
+    public function _clearArray($array)
+    {
+        foreach($array as $key => $arr)
+        {
+            if(is_array($arr))
+            {
+                $array[$key] = '';
+            }
+        }
+
+        return $array;
+    }
+
+    /**
+     * Build URI to send in requests to easypay
+     *
+     * @param $url
+     * @return string
+     */
     public function _get_uri($url)
     {
         $str = $this->getServerLink();
- 
+
         $this->_add_code_to_uri(); // adds s_code to all requests
- 
+
         $str .= $url;
- 
+
         $tmp = str_replace(' ', '+', http_build_query( $this -> uri ) );
         $this -> uri = array();
- 
+
         return $str . '?' . $tmp;
     }
- 
-    /*
-    |--------------------------------------------------------------------------
-    | Returns a string from a link via cUrl
-    |--------------------------------------------------------------------------
-    */
-    private function _get_contents( $url, $type = 'GET' )
+
+    /**
+     * Make the call to easypay API
+     *
+     * @param $url
+     * @param string $type
+     * @return bool|mixed
+     */
+    private function _get_contents($url, $type = 'GET' )
     {
         try {
             $curl = curl_init();
@@ -315,54 +350,54 @@ class EasyPay {
             } else {
                 throw new Exception('Communication Error, standart communication not selected, POST or GET required');
             }
- 
+
             curl_setopt( $curl, CURLOPT_RETURNTRANSFER, TRUE );
             $result = curl_exec( $curl );
             curl_close($curl);
         } catch( Exception $e ) {
             $result = false;
         }
- 
+
         return $result;
     }
- 
-    /*
-    |--------------------------------------------------------------------------
-    | Adds a parameter to our URI
-    |--------------------------------------------------------------------------
+
+    /**
+     * Define if its production or dev mode using config file
+     *
+     * @param bool|false $live_mode
      */
-    private function _add_uri_param( $key, $value )
+    public function setLiveMode($live_mode = false)
     {
-        $this->uri[ $key ] = $value;
+        $this->live_mode = $live_mode;
     }
- 
-    /*
-    |--------------------------------------------------------------------------
-    | Add s_code to URI
-    |--------------------------------------------------------------------------
-    */
-    private function _add_code_to_uri()
+
+    /**
+     * Setter for return_url
+     *
+     * @param $return_url
+     */
+    public function seReturnUrl($return_url = null)
     {
-        $this->code = config('easypay.code') ? config('easypay.code') : false;
- 
-        $this->_add_uri_param('s_code',  $this->code);
+        $this->return_url = $return_url ? $return_url : config('easypay.ep_rec_url');
     }
- 
-    /*
-    |--------------------------------------------------------------------------
-    | Clear data array
-    |--------------------------------------------------------------------------
-    */
-    public function _clearArray($array)
+
+    /**
+     * Getter for request reference link
+     *
+     * @return mixed
+     */
+    public function getRequestReferenceLink()
     {
-        foreach($array as $key => $arr)
-        {
-            if(is_array($arr))
-            {
-                $array[$key] = '';
-            }
-        }
- 
-        return $array;
+        return config('easypay.request_reference');
+    }
+
+    /**
+     * Getter for server link
+     *
+     * @return mixed
+     */
+    public function getServerLink()
+    {
+        return $this->is_live() ? config('easypay.production_server') : config('easypay.test_server');
     }
 }
