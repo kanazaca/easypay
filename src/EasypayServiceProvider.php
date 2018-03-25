@@ -15,7 +15,7 @@ class EasypayServiceProvider extends ServiceProvider
     {
         $this->publishes([__DIR__ . '/config/easypay.php' => config_path('easypay.php')]);
         $migration_string = date('Y').'_'.date('m').'_'.date('d').'_'.date('His').'_';
-        $this->publishes([__DIR__ . '/migrations/easypay_notifications.php' => $this->app->databasePath().'/migrations/'.$migration_string.'create_easypay_notifications.php']);
+        $this->publishes([__DIR__ . '/migrations/easypay_notifications_table.php' => $this->app->databasePath().'/migrations/'.$migration_string.'create_easypay_notifications_table.php']);
     }
 
     /**
