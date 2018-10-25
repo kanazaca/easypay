@@ -38,6 +38,16 @@ class EasyPay {
     /**
      * @var string
      */
+    public $ep_partner;
+
+    /**
+     * @var string
+     */
+    public $o_max_date;
+
+    /**
+     * @var string
+     */
     public $code;
 
     /**
@@ -100,6 +110,8 @@ class EasyPay {
         $this->_add_uri_param('o_obs', $this->o_obs);
         $this->_add_uri_param('o_mobile', $this->o_mobile);
         $this->_add_uri_param('o_email', $this->o_email);
+        $this->_add_uri_param('ep_partner', $this->ep_partner);
+        $this->_add_uri_param('o_max_date', $this->o_max_date);
  
         return $this->_xmlToArray( $this->_get_contents( $this->_get_uri( config('easypay.request_reference') ) ) );
     }
